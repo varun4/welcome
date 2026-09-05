@@ -885,6 +885,17 @@ function loop(ts) {
 }
 
 window.addEventListener('keydown', e => {
+  if (e.code === 'KeyM') {
+    muted = !muted;
+    muteBtn.classList.toggle('muted', muted);
+    if (engineGain) engineGain.gain.value = muted ? 0 : currentVol();
+    return;
+  }
+  if (e.code === 'KeyF') {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else document.documentElement.requestFullscreen().catch(() => {});
+    return;
+  }
   keys[e.code] = true;
   if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) e.preventDefault();
   startAudio();
