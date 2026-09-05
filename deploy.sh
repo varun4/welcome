@@ -1,6 +1,7 @@
 #!/bin/bash
 set -e
 
+REPO="varun4/welcome"
 cd "$(dirname "$0")"
 
 echo "Checking dependencies..."
@@ -16,21 +17,50 @@ elif command -v brew &>/dev/null; then
   PKG_UPDATE="brew update"
   PKG_INSTALL="brew install"
 else
-  echo "Unsupported package manager. Install manually: git, docker, docker compose"
+  echo "Unsupported package manager. Install manually: git, docker, docker compose, gh"
   exit 1
 fi
 
-# git
-if ! command -v git &>/dev/null; then
-  echo "Installing git..."
-  $PKG_UPDATE && $PKG_INSTALL git
-fi
-
-# docker
-if ! command -v docker &>/dev/null; then
-  echo "Installing docker..."
-  curl -fsSL https://get.docker.com | sudo sh
-fi
+# Install each dependency from dependencies.txt
+while IFS= read -r dep; do
+  [ -z "$dep" ] && continue
+  if command -v "$dep" &>/dev/null || docker compose version 2>/dev/null | grep -q "$dep"; then
+    echo "  $dep ✓"
+    continue
+  fi
+  echo "Installing $dep..."
+  case "$dep" in
+    git)
+      $PKG_UPDATE && $PKG_INSTALL git
+      ;;
+    docker)
+      curl -fsSL https://get.docker.com | sudo sh
+      ;;
+    gh)
+      if command -v apt-get &>/dev/null; then
+        curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+        $PKG_UPDATE && $PKG_INSTALL gh
+      elif command -v brew &>/dev/null; then
+        brew install gh
+      else
+        curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+        $PKG_UPDATE && $PKG_INSTALL gh
+      fi
+      ;;
+    docker-compose|docker compose)
+      $PKG_INSTALL docker-compose-plugin 2>/dev/null || {
+        COMPOSE_VERSION=$(curl -s https://api.github.com/repos/docker/compose/releases/latest | grep tag_name | cut -d '"' -f 4)
+        sudo curl -L "https://github.com/docker/compose/releases/download/${COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" \
+          -o /usr/local/bin/docker-compose
+        sudo chmod +x /usr/local/bin/docker-compose
+      }
+      ;;
+    *)
+      $PKG_UPDATE && $PKG_INSTALL "$dep" 2>/dev/null || echo "  Warning: could not install $dep automatically"
+      ;;
+  esac
+done < dependencies.txt
 
 # docker compose plugin
 if ! docker compose version &>/dev/null; then
@@ -51,8 +81,14 @@ fi
 
 echo "All dependencies installed."
 
-echo "Pulling latest changes..."
-git pull origin main
+# Clone with gh if not already a git repo, otherwise pull
+if [ ! -d .git ]; then
+  echo "Cloning repo..."
+  gh repo clone "$REPO" .
+else
+  echo "Pulling latest changes..."
+  gh repo clone "$REPO" . -- --pull 2>/dev/null || git pull origin main
+fi
 
 echo "Rebuilding and restarting containers..."
 docker compose down
