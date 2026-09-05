@@ -1041,8 +1041,12 @@ function updateWorld(dt) {
     if (i.isGinaBar) {
       if (sx < -i.w - buffer) { islands.splice(idx, 1); ginaActive = false; }
     } else {
-      if (sx < -i.w - buffer) { i.wx += ww; ginaIslandCounter++; }
-      if (sx > W + i.w + buffer + ww * 0.5) i.wx -= ww;
+      if (sx > W + i.w + buffer + ww * 0.5) {
+        i.wx -= ww;
+      } else if (sx < -i.w - buffer) {
+        i.wx += ww;
+        ginaIslandCounter++;
+      }
     }
   }
 
