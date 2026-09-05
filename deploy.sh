@@ -4,6 +4,15 @@ set -e
 REPO="varun4/welcome"
 cd "$(dirname "$0")"
 
+# Self-update: pull latest, re-exec if script changed
+OLD_HASH=$(git rev-parse HEAD 2>/dev/null || echo "")
+git fetch origin main 2>/dev/null && git reset --hard origin/main 2>/dev/null || git pull origin main 2>/dev/null || true
+NEW_HASH=$(git rev-parse HEAD 2>/dev/null || echo "")
+if [ "$OLD_HASH" != "$NEW_HASH" ]; then
+  echo "Script updated. Re-executing..."
+  exec "$0" "$@"
+fi
+
 echo "Checking dependencies..."
 
 # Detect package manager
@@ -70,15 +79,10 @@ fi
 
 echo "All dependencies installed."
 
-# Clone or pull using gh
+# Clone if not yet a repo
 if [ ! -d .git ]; then
   echo "Cloning repo..."
   gh repo clone "$REPO" .
-else
-  echo "Pulling latest changes..."
-  gh api repos/"$REPO"/pulls --jq '.[].head.sha' > /dev/null 2>&1 && \
-    git fetch origin main && git reset --hard origin/main || \
-    git pull origin main
 fi
 
 # Ensure privileged ports are available for rootless Docker
