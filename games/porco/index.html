@@ -111,15 +111,9 @@ function spawnGinaIsland() {
   const ww = W * WORLD_WIDTH_MULT;
   const w = 220;
   const h = 55;
+  // No trees behind the hotel: the reference shows only low greenery
+  // against the wall (distant cypresses excluded per direction)
   const trees = [];
-  for (let t = 0; t < 15; t++) {
-    trees.push({
-      x: (Math.random() - 0.5) * w * 0.6,
-      y: -Math.random() * h * 0.7,
-      r: 2 + Math.random() * 4,
-      shade: Math.floor(Math.random() * 4),
-    });
-  }
   const flowers = [];
   for (let f = 0; f < 20; f++) {
     flowers.push({
@@ -167,16 +161,23 @@ function generateSparkles() {
   }
 }
 
+function generateWorld() {
+  farClouds = [];
+  nearClouds = [];
+  islands = [];
+  // Scale cloud counts with viewport width so per-pixel density stays
+  // consistent between phones and desktops (islands already scale in kind)
+  const density = W / 1200;
+  generateClouds(farClouds, Math.min(64, Math.max(8, Math.round(22 * density))), H * 0.02, H * 0.52, 0.8, 2.0, 0.3, 0.55);
+  generateClouds(nearClouds, Math.min(40, Math.max(5, Math.round(14 * density))), H * 0.01, H * 0.55, 1.0, 2.2, 0.5, 0.78);
+  generateIslands();
+}
+
 function init() {
   resize();
   planeX = W * 0.18;
   planeY = H * 0.35;
-  farClouds = [];
-  nearClouds = [];
-  islands = [];
-  generateClouds(farClouds, 22, H * 0.02, H * 0.52, 0.8, 2.0, 0.3, 0.55);
-  generateClouds(nearClouds, 14, H * 0.01, H * 0.55, 1.0, 2.2, 0.5, 0.78);
-  generateIslands();
+  generateWorld();
   generateSparkles();
 }
 
@@ -550,30 +551,94 @@ function drawPlane() {
   ctx.ellipse(5 * s, -10 * s, 3.5 * s, 1.8 * s, -0.2, Math.PI, 0);
   ctx.fill();
 
+  // Porco the pig pilot in the cockpit (side view, facing +x)
   ctx.save();
   ctx.translate(4 * s, -11 * s);
-  ctx.fillStyle = '#6a4a2a';
+  // Flowing scarf streaming back in the wind, with a gentle flutter
+  const flutter = Math.sin(wavePhase * 3) * 1 * s;
+  ctx.fillStyle = '#f2ede0';
   ctx.beginPath();
-  ctx.ellipse(0, -4 * s, 3.5 * s, 4 * s, 0, 0, Math.PI * 2);
+  ctx.moveTo(-1.5 * s, -2 * s);
+  ctx.quadraticCurveTo(-6 * s, -4.5 * s + flutter, -11 * s, -3 * s + flutter);
+  ctx.quadraticCurveTo(-6.5 * s, -2 * s, -5 * s, -0.5 * s);
+  ctx.quadraticCurveTo(-3 * s, -1 * s, -1.5 * s, -2 * s);
+  ctx.closePath();
   ctx.fill();
-  ctx.fillStyle = '#c83030';
-  ctx.fillRect(-1.5 * s, -1 * s, 3 * s, 4 * s);
-  ctx.fillStyle = '#d4a020';
+  // Cockpit coaming rim
+  ctx.fillStyle = '#4a2c14';
   ctx.beginPath();
-  ctx.arc(0, -5 * s, 2.5 * s, 0, Math.PI * 2);
+  ctx.ellipse(0, 1 * s, 4 * s, 2 * s, 0, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = '#222';
+  // Flight-jacket shoulders
+  ctx.fillStyle = '#8a6a3a';
   ctx.beginPath();
-  ctx.ellipse(1.2 * s, -5.5 * s, 1.1 * s, 0.6 * s, 0.1, 0, Math.PI * 2);
+  ctx.ellipse(0.3 * s, 0.5 * s, 3.2 * s, 2.2 * s, 0, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = '#88ccff';
+  // Pig head
+  ctx.fillStyle = '#e8b48c';
   ctx.beginPath();
-  ctx.ellipse(1.2 * s, -5.5 * s, 0.8 * s, 0.4 * s, 0.1, 0, Math.PI * 2);
+  ctx.arc(0.5 * s, -3.5 * s, 2.6 * s, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = '#5a3a1a';
+  // Round ear
+  ctx.fillStyle = '#e8b48c';
   ctx.beginPath();
-  ctx.ellipse(2.8 * s, -4.5 * s, 1 * s, 1.2 * s, 0.3, 0, Math.PI * 2);
+  ctx.moveTo(-1.5 * s, -5 * s);
+  ctx.quadraticCurveTo(-2.8 * s, -7 * s, -0.8 * s, -6.8 * s);
+  ctx.quadraticCurveTo(-0.5 * s, -5.8 * s, -1.5 * s, -5 * s);
+  ctx.closePath();
   ctx.fill();
+  ctx.fillStyle = '#c98a64';
+  ctx.beginPath();
+  ctx.arc(-1.4 * s, -6 * s, 0.7 * s, 0, Math.PI * 2);
+  ctx.fill();
+  // Khaki flight cap over the back/top of the head
+  ctx.fillStyle = '#7a7040';
+  ctx.beginPath();
+  ctx.moveTo(-2.2 * s, -3.5 * s);
+  ctx.quadraticCurveTo(-2.5 * s, -6.5 * s, 0 * s, -6.8 * s);
+  ctx.quadraticCurveTo(1.8 * s, -7 * s, 2.2 * s, -5 * s);
+  ctx.quadraticCurveTo(0.5 * s, -5.8 * s, -1 * s, -4.5 * s);
+  ctx.quadraticCurveTo(-1.8 * s, -3.8 * s, -2.2 * s, -3.5 * s);
+  ctx.closePath();
+  ctx.fill();
+  // Goggle strap and lens on the cap
+  ctx.strokeStyle = '#3a2c1a';
+  ctx.lineWidth = 0.7 * s;
+  ctx.beginPath();
+  ctx.moveTo(-2.2 * s, -5.2 * s);
+  ctx.quadraticCurveTo(0 * s, -6 * s, 2.2 * s, -5.4 * s);
+  ctx.stroke();
+  ctx.fillStyle = '#2e2e34';
+  ctx.beginPath();
+  ctx.arc(1.1 * s, -5.6 * s, 1 * s, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(160,200,230,0.7)';
+  ctx.beginPath();
+  ctx.arc(0.8 * s, -5.9 * s, 0.35 * s, 0, Math.PI * 2);
+  ctx.fill();
+  // Snout with nostrils
+  ctx.fillStyle = '#f2c9a4';
+  ctx.beginPath();
+  ctx.ellipse(2.4 * s, -2.8 * s, 1.3 * s, 1.1 * s, 0.15, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#5a3222';
+  ctx.beginPath();
+  ctx.arc(2.5 * s, -2.9 * s, 0.28 * s, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(3.2 * s, -2.7 * s, 0.28 * s, 0, Math.PI * 2);
+  ctx.fill();
+  // Eye and mustache flick
+  ctx.fillStyle = '#2a1c12';
+  ctx.beginPath();
+  ctx.arc(1.3 * s, -4.3 * s, 0.32 * s, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#3a2418';
+  ctx.lineWidth = 0.5 * s;
+  ctx.beginPath();
+  ctx.moveTo(2.9 * s, -1.9 * s);
+  ctx.quadraticCurveTo(3.6 * s, -1.7 * s, 3.9 * s, -1.2 * s);
+  ctx.stroke();
   ctx.restore();
 
   ctx.fillStyle = '#c81020';
@@ -590,14 +655,77 @@ function drawPlane() {
   ctx.fillStyle = '#c81020';
   ctx.fillRect(-4 * s, -4 * s, 20 * s, 3 * s);
 
-  ctx.fillStyle = '#d4a020';
+  // Vertical tail fin with Italian tricolor (Porco's Savoia S.21 rudder).
+  // Side view, nose +x: bands run front -> back (right -> left):
+  // green (leading), white (center, R + shield), red rudder (trailing).
+  // Short round fin: parallel blade with a semicircular crown.
+  const finPath = new Path2D();
+  finPath.moveTo(-25.5 * s, -3.5 * s);
+  finPath.quadraticCurveTo(-26 * s, -7 * s, -26.2 * s, -9 * s);
+  finPath.quadraticCurveTo(-26.2 * s, -13.7 * s, -30.85 * s, -13.7 * s);
+  finPath.quadraticCurveTo(-35.5 * s, -13.7 * s, -35.5 * s, -9 * s);
+  finPath.lineTo(-35.5 * s, -2 * s);
+  finPath.quadraticCurveTo(-30 * s, -3 * s, -25.5 * s, -3.5 * s);
+  finPath.closePath();
+  ctx.fillStyle = '#f6f6f0';
+  ctx.fill(finPath);
+  // Tricolor bands clipped to the fin: green leading band, red rudder;
+  // the white base shows through as the center band
+  ctx.save();
+  ctx.clip(finPath);
+  ctx.fillStyle = '#c81020';
+  ctx.fillRect(-35.6 * s, -15 * s, 3.4 * s, 23 * s);
+  ctx.fillStyle = '#35a047';
+  ctx.fillRect(-29.6 * s, -15 * s, 4.5 * s, 23 * s);
+  // Light rim highlight inside the green leading edge, up into the crown
+  ctx.strokeStyle = '#7ec87e';
+  ctx.lineWidth = 2 * s;
   ctx.beginPath();
-  ctx.moveTo(-24 * s, -6 * s);
-  ctx.lineTo(-32 * s, -18 * s);
-  ctx.lineTo(-36 * s, -16 * s);
-  ctx.lineTo(-27 * s, -3 * s);
+  ctx.moveTo(-25.5 * s, -3.5 * s);
+  ctx.quadraticCurveTo(-26 * s, -7 * s, -26.2 * s, -9 * s);
+  ctx.quadraticCurveTo(-26.2 * s, -13.7 * s, -30.85 * s, -13.7 * s);
+  ctx.stroke();
+  ctx.restore();
+  // Dark red outline around the fin
+  ctx.strokeStyle = '#7a1010';
+  ctx.lineWidth = 1 * s;
+  ctx.stroke(finPath);
+  // Small red fillet where the leading edge meets the fuselage
+  ctx.fillStyle = '#c81020';
+  ctx.beginPath();
+  ctx.moveTo(-25.5 * s, -3 * s);
+  ctx.lineTo(-28.5 * s, -3.5 * s);
+  ctx.lineTo(-26 * s, -6.5 * s);
   ctx.closePath();
   ctx.fill();
+  // Rudder rib lines and hinge post on the red rudder section
+  ctx.strokeStyle = '#7a1010';
+  ctx.lineWidth = 0.6 * s;
+  ctx.beginPath();
+  ctx.moveTo(-35.3 * s, -5.5 * s); ctx.lineTo(-32.4 * s, -5.5 * s);
+  ctx.moveTo(-35.3 * s, -8 * s); ctx.lineTo(-32.4 * s, -8 * s);
+  ctx.stroke();
+  ctx.lineWidth = 0.8 * s;
+  ctx.beginPath();
+  ctx.moveTo(-32.2 * s, -3.5 * s); ctx.lineTo(-32.2 * s, -8.5 * s);
+  ctx.stroke();
+  // Red "R" over a yellow/blue shield on the white band
+  ctx.fillStyle = '#ce2b37';
+  ctx.fillRect(-31.5 * s, -8.6 * s, 1.2 * s, 0.5 * s);
+  ctx.fillRect(-31.5 * s, -8.6 * s, 0.5 * s, 1.8 * s);
+  ctx.fillRect(-31 * s, -7.9 * s, 1 * s, 0.45 * s);
+  ctx.beginPath();
+  ctx.moveTo(-31.6 * s, -6.6 * s);
+  ctx.lineTo(-30.2 * s, -6.6 * s);
+  ctx.lineTo(-30.2 * s, -5 * s);
+  ctx.lineTo(-30.9 * s, -4.4 * s);
+  ctx.lineTo(-31.6 * s, -5 * s);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = '#e8c33a';
+  ctx.fillRect(-31.4 * s, -6.4 * s, 0.9 * s, 0.7 * s);
+  ctx.fillStyle = '#2a4a9a';
+  ctx.fillRect(-31.4 * s, -5.7 * s, 0.9 * s, 0.7 * s);
 
   ctx.fillStyle = '#c81020';
   ctx.beginPath();
@@ -741,20 +869,32 @@ function drawHotelAdriano(island) {
   ctx.fillStyle = '#b89858';
   ctx.fillRect(wallX, wallY, wallW, 2 * sc);
 
-  // Water gate arch
-  const gateX = sx + bw * 0.1;
-  const gateW = 8 * sc;
-  const gateH = 12 * sc;
+  // Water gate arch (small, right-of-center like the reference)
+  const gateX = sx + bw * 0.22;
+  const gateW = 6 * sc;
+  const gateH = 7 * sc;
   ctx.fillStyle = '#3a2a1a';
   ctx.beginPath();
   ctx.ellipse(gateX, wallY + wallH, gateW * 0.5, gateH, 0, Math.PI, 0);
   ctx.fill();
 
-  // Small windows in stone wall
+  // Faint plaster block lines and weathering on the open wall
+  ctx.strokeStyle = 'rgba(90,60,30,0.1)';
+  ctx.lineWidth = Math.max(0.6, 0.7 * sc);
+  for (let li = 1; li <= 2; li++) {
+    const ly = wallY + wallH * (0.3 + li * 0.2);
+    ctx.beginPath();
+    ctx.moveTo(wallX + 4 * sc, ly);
+    ctx.lineTo(wallX + wallW - 4 * sc, ly);
+    ctx.stroke();
+  }
+
+  // Small slit windows tucked under the ivy line, clear of the logo
   ctx.fillStyle = '#3a2a1a';
+  const slitX = [0.08, 0.66, 0.88];
   for (let wi = 0; wi < 3; wi++) {
-    const wx = wallX + wallW * (0.15 + wi * 0.3);
-    ctx.fillRect(wx, wallY + wallH * 0.35, 4 * sc, 5 * sc);
+    const wx = wallX + wallW * slitX[wi];
+    ctx.fillRect(wx, wallY + wallH * 0.04, 4 * sc, 4 * sc);
   }
 
   // --- Main hotel building ---
@@ -903,11 +1043,44 @@ function drawHotelAdriano(island) {
     ctx.fillRect(stairX, sy, stairW * (1 - s * 0.1), wallH * 0.13);
   }
 
-  // --- "Hotel Adriano" text on wall ---
-  ctx.fillStyle = '#8a3020';
-  ctx.font = `bold ${Math.max(5, 7 * sc)}px serif`;
+  // Low bushes hugging the wall base (reference greenery, no tall trees)
+  ctx.fillStyle = '#3a6a2a';
+  const bushSpots = [[0.04, 3.2], [0.16, 4], [0.6, 3.4], [0.8, 3.8]];
+  for (const [bf, br] of bushSpots) {
+    ctx.beginPath();
+    ctx.arc(wallX + wallW * bf, baseY - 1, br * sc, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.fillStyle = '#4a7a32';
+  for (const [bf, br] of bushSpots) {
+    ctx.beginPath();
+    ctx.arc(wallX + wallW * bf - br * sc * 0.3, baseY - 1 - br * sc * 0.4, br * sc * 0.55, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // --- Painted script logo on the open plaster (reference: red script
+  // "Hotel" over "Adriano" with a flourish, clear of windows and gate) ---
+  ctx.save();
+  ctx.translate(sx - bw * 0.1, wallY + wallH * 0.54);
+  ctx.rotate(-0.04);
+  ctx.fillStyle = '#a03523';
   ctx.textAlign = 'center';
-  ctx.fillText('Hotel Adriano', sx + bw * 0.05, wallY + wallH * 0.7);
+  ctx.font = `italic ${5.5 * sc}px serif`;
+  ctx.fillText('Hotel', 0, -4.5 * sc);
+  ctx.font = `italic bold ${7 * sc}px serif`;
+  ctx.fillText('Adriano', 0, 3.5 * sc);
+  ctx.strokeStyle = '#a03523';
+  ctx.lineWidth = Math.max(0.8, 1 * sc);
+  ctx.beginPath();
+  ctx.moveTo(-13 * sc, 5.5 * sc);
+  ctx.quadraticCurveTo(0, 8 * sc, 14 * sc, 5.5 * sc);
+  ctx.stroke();
+  ctx.lineWidth = Math.max(0.6, 0.7 * sc);
+  ctx.beginPath();
+  ctx.moveTo(-9 * sc, 7.2 * sc);
+  ctx.quadraticCurveTo(2 * sc, 9 * sc, 11 * sc, 7 * sc);
+  ctx.stroke();
+  ctx.restore();
 
   // --- Dock extending left ---
   const dockStartX = sx - bw * 0.48;
@@ -979,11 +1152,13 @@ function handleInput(dt) {
   if (keys['ArrowUp'] || keys['KeyW']) iy -= 1;
   if (keys['ArrowDown'] || keys['KeyS']) iy += 1;
 
+  // Match the drawn joystick size (see drawJoystick) so visual and response agree
+  const joyScale = Math.max(1, W / 1200);
   if (touch.active) {
     const dx = touch.x - touch.startX, dy = touch.y - touch.startY;
     const dist = Math.sqrt(dx*dx+dy*dy);
-    const maxD = 27;
-    if (dist > 4) {
+    const maxD = 27 * joyScale;
+    if (dist > 4 * joyScale) {
       ix += Math.max(-1, Math.min(1, dx / maxD));
       iy += Math.max(-1, Math.min(1, dy / maxD));
     }
@@ -997,8 +1172,10 @@ function handleInput(dt) {
     planeVY += ny * PLANE_SPEED * strength * dt;
   }
 
-  planeVX *= PLANE_FRICTION;
-  planeVY *= PLANE_FRICTION;
+  // Frame-rate independent damping: PLANE_FRICTION is calibrated for 60fps
+  const damp = Math.pow(PLANE_FRICTION, dt * 60);
+  planeVX *= damp;
+  planeVY *= damp;
   planeX += planeVX * dt;
   planeY += planeVY * dt;
 
@@ -1178,10 +1355,15 @@ canvas.addEventListener('touchend', e => {
 canvas.addEventListener('touchcancel', e => { touch.active = false; touch.id = null; });
 canvas.addEventListener('mousedown', () => startAudio());
 
+let resizeTimer = null;
 window.addEventListener('resize', () => {
   const oldW = W || window.innerWidth, oldH = H || window.innerHeight;
   resize();
   if (oldW && oldH) { planeX = planeX * (W/oldW); planeY = planeY * (H/oldH); }
+  // Refresh viewport-dependent layout (counts, cloud bands) once resizing
+  // settles; worldOffset is preserved so the scene doesn't jump
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(generateWorld, 200);
 });
 
 init();
