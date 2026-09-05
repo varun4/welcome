@@ -1014,7 +1014,13 @@ function handleInput(dt) {
 
 function updateWorld(dt) {
   const scrollSpeed = SCROLL_BASE * (W / 1200);
+  const ww = W * WORLD_WIDTH_MULT;
+  const prevRev = Math.floor(worldOffset / ww);
   worldOffset += scrollSpeed * dt;
+  const curRev = Math.floor(worldOffset / ww);
+  if (curRev > prevRev) {
+    ginaIslandCounter += islands.filter(i => !i.isGinaBar).length;
+  }
   propAngle += dt * 28;
   wavePhase += dt * 1.5;
   dayTime += dt / DAY_CYCLE;
@@ -1031,22 +1037,14 @@ function updateWorld(dt) {
     });
   }
 
-  const ww = W * WORLD_WIDTH_MULT;
   const buffer = 250;
   for (const c of farClouds) { const sx = screenX(c.wx); if (sx < -buffer) c.wx += ww; if (sx > W+buffer+ww*0.5) c.wx -= ww; }
   for (const c of nearClouds) { const sx = screenX(c.wx); if (sx < -buffer) c.wx += ww; if (sx > W+buffer+ww*0.5) c.wx -= ww; }
   for (let idx = islands.length - 1; idx >= 0; idx--) {
     const i = islands[idx];
-    const sx = screenX(i.wx);
     if (i.isGinaBar) {
+      const sx = screenX(i.wx);
       if (sx < -i.w - buffer) { islands.splice(idx, 1); ginaActive = false; }
-    } else {
-      if (sx > W + i.w + buffer + ww * 0.5) {
-        i.wx -= ww;
-      } else if (sx < -i.w - buffer) {
-        i.wx += ww;
-        ginaIslandCounter++;
-      }
     }
   }
 
