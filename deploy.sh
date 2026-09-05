@@ -81,6 +81,13 @@ else
     git pull origin main
 fi
 
+# Ensure privileged ports are available for rootless Docker
+if [ "$(sysctl -n net.ipv4.ip_unprivileged_port_start 2>/dev/null)" != "80" ]; then
+  echo "Setting net.ipv4.ip_unprivileged_port_start=80..."
+  echo "net.ipv4.ip_unprivileged_port_start=80" | sudo tee -a /etc/sysctl.conf > /dev/null
+  sudo sysctl -p
+fi
+
 echo "Rebuilding and restarting containers..."
 docker compose down
 docker compose up -d --build
