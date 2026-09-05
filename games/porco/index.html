@@ -60,8 +60,8 @@ let sparkles = [];
 let wavePhase = 0;
 let boats = [];
 let boatSpawnTimer = 0;
-let ginaBarIsland = -1;
-let ginaBarTimer = 0;
+let ginaIslandCounter = 0;
+let ginaActive = false;
 
 function generateClouds(arr, count, yMin, yMax, scaleMin, scaleMax, opacityMin, opacityMax) {
   const ww = W * WORLD_WIDTH_MULT;
@@ -105,6 +105,28 @@ function generateIslands() {
     const dist = Math.random();
     islands.push({ wx: Math.random() * ww, w, h, trees, rocks, dist });
   }
+}
+
+function spawnGinaIsland() {
+  const ww = W * WORLD_WIDTH_MULT;
+  const w = 160;
+  const h = 40;
+  const trees = [];
+  for (let t = 0; t < 10; t++) {
+    trees.push({
+      x: (Math.random() - 0.5) * w * 0.6,
+      y: -Math.random() * h * 0.7,
+      r: 2 + Math.random() * 4,
+      shade: Math.floor(Math.random() * 4),
+    });
+  }
+  islands.push({
+    wx: worldOffset + W + 200 + Math.random() * 100,
+    w, h, trees, rocks: [], dist: 0.2,
+    isGinaBar: true,
+  });
+  ginaActive = true;
+  ginaIslandCounter = 0;
 }
 
 function generateSparkles() {
@@ -665,19 +687,31 @@ function drawBoat(boat) {
   ctx.restore();
 }
 
-function drawGinaBar() {
-  if (ginaBarIsland < 0 || ginaBarIsland >= islands.length) return;
-  const island = islands[ginaBarIsland];
+function drawGinaBar(island) {
   const sx = screenX(island.wx);
   if (sx < -island.w || sx > W + island.w) return;
   const baseY = horizonY + 1;
-  const bx = sx + island.w * 0.15;
-  const by = baseY - island.h * 0.45;
   const sc = 0.7 + (1 - island.dist) * 0.5;
   const alpha = 0.6 + (1 - island.dist) * 0.4;
 
   ctx.save();
   ctx.globalAlpha = alpha;
+
+  const dockX = sx + island.w * 0.35;
+  const dockY = baseY;
+  const dockLen = 30 * sc;
+  const dockH = 6 * sc;
+
+  ctx.fillStyle = '#8B6914';
+  for (let p = 0; p < 4; p++) {
+    const px = dockX + p * dockLen * 0.3;
+    ctx.fillRect(px - 1.5 * sc, dockY - dockH * 2, 3 * sc, dockH * 3);
+  }
+  ctx.fillStyle = '#A0792C';
+  ctx.fillRect(dockX, dockY - dockH * 1.5, dockLen * 0.9, 3 * sc);
+
+  const bx = dockX + dockLen * 0.3;
+  const by = dockY - dockH * 2;
   ctx.translate(bx, by);
   ctx.scale(sc, sc);
 
@@ -794,18 +828,24 @@ function updateWorld(dt) {
     });
   }
 
-  ginaBarTimer -= dt;
-  if (ginaBarTimer <= 0 && islands.length > 0) {
-    ginaBarTimer = 600 + Math.random() * 200;
-    ginaBarIsland = Math.floor(Math.random() * islands.length);
-    setTimeout(() => { ginaBarIsland = -1; }, 40000 + Math.random() * 20000);
-  }
-
   const ww = W * WORLD_WIDTH_MULT;
   const buffer = 250;
   for (const c of farClouds) { const sx = screenX(c.wx); if (sx < -buffer) c.wx += ww; if (sx > W+buffer+ww*0.5) c.wx -= ww; }
   for (const c of nearClouds) { const sx = screenX(c.wx); if (sx < -buffer) c.wx += ww; if (sx > W+buffer+ww*0.5) c.wx -= ww; }
-  for (const i of islands) { const sx = screenX(i.wx); if (sx < -i.w-buffer) i.wx += ww; if (sx > W+i.w+buffer+ww*0.5) i.wx -= ww; }
+  for (let idx = islands.length - 1; idx >= 0; idx--) {
+    const i = islands[idx];
+    const sx = screenX(i.wx);
+    if (i.isGinaBar) {
+      if (sx < -i.w - buffer) { islands.splice(idx, 1); ginaActive = false; }
+    } else {
+      if (sx < -i.w - buffer) { i.wx += ww; ginaIslandCounter++; }
+      if (sx > W + i.w + buffer + ww * 0.5) i.wx -= ww;
+    }
+  }
+
+  if (!ginaActive && ginaIslandCounter >= 100) {
+    spawnGinaIsland();
+  }
 
   for (let b = boats.length - 1; b >= 0; b--) {
     const sx = screenX(boats[b].wx);
@@ -820,7 +860,7 @@ function render() {
   drawHaze();
   drawSea();
   for (const i of islands) drawIsland(i);
-  drawGinaBar();
+  for (const i of islands) if (i.isGinaBar) drawGinaBar(i);
   for (const b of boats) drawBoat(b);
   for (const c of nearClouds) { const cloudBot = c.y + 30 * c.scale; if (cloudBot < planeY - 15) drawCloud(c, false); }
   drawPlane();
