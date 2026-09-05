@@ -1006,19 +1006,46 @@ function drawHotelAdriano(island) {
   ctx.arc(towerX, towerY - towerH - 6 * sc, 2 * sc, 0, Math.PI * 2);
   ctx.fill();
 
-  // --- Vines on walls ---
+  // --- Ivy hanging from the wall top (rooted strands, never floating) ---
+  // Strands start tucked under the top trim and hang downward, constrained
+  // to the wall span at the top corners and flanks, clear of the logo
   if (island.vines) {
-    ctx.fillStyle = '#4a8a3a';
-    for (const vine of island.vines) {
-      const vx = sx + vine.x * sc;
-      const vy = baseTop + vine.y * sc;
+    const strandX = [0.07, 0.25, 0.75, 0.93];
+    island.vines.forEach((vine, i) => {
+      const fx = strandX[i % strandX.length] + (vine.x / island.w) * 0.1;
+      const vx = wallX + wallW * fx;
+      const len = (6 + (vine.h % 8)) * sc;
+      const sway = ((i % 2) ? 1 : -1) * 2 * sc;
+      // Root cluster tucked under the trim
+      ctx.fillStyle = '#3a6a2a';
       ctx.beginPath();
-      ctx.ellipse(vx, vy, 3 * sc, vine.h * 0.3 * sc, 0, 0, Math.PI * 2);
+      ctx.ellipse(vx, wallY + 1.5 * sc, 2.6 * sc, 2 * sc, 0, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = '#3a7a2a';
-      ctx.fillRect(vx - 1 * sc, vy, 2 * sc, vine.h * 0.5 * sc);
-      ctx.fillStyle = '#4a8a3a';
-    }
+      // Tapering strand hanging from the root
+      ctx.strokeStyle = '#3a6a2a';
+      ctx.lineCap = 'round';
+      ctx.lineWidth = 2.2 * sc;
+      ctx.beginPath();
+      ctx.moveTo(vx, wallY + 1 * sc);
+      ctx.quadraticCurveTo(vx + sway, wallY + len * 0.5, vx - sway * 0.5, wallY + len);
+      ctx.stroke();
+      ctx.strokeStyle = '#4a7a32';
+      ctx.lineWidth = 1.2 * sc;
+      ctx.beginPath();
+      ctx.moveTo(vx, wallY + 1 * sc);
+      ctx.quadraticCurveTo(vx + sway, wallY + len * 0.5, vx - sway * 0.5, wallY + len);
+      ctx.stroke();
+      // Leaf dots along the strand
+      ctx.fillStyle = '#4a7a32';
+      for (let l = 1; l <= 4; l++) {
+        const ly = wallY + 1 * sc + (len * l) / 5;
+        const lx = vx + ((l % 2) ? 1 : -1) * 1.6 * sc;
+        ctx.beginPath();
+        ctx.arc(lx, ly, (1.1 + (l % 2) * 0.5) * sc, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    });
+    ctx.lineCap = 'butt';
   }
 
   // --- Terrace with umbrellas (right side) ---
