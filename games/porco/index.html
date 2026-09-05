@@ -843,7 +843,7 @@ function updateAudio(dt) {
   if (!audioStarted || !audioCtx || !engineGain) return;
   if (audioCtx.state === 'suspended') { audioCtx.resume(); return; }
   const moving = Math.abs(planeVX) > 5 || Math.abs(planeVY) > 5;
-  const targetVol = moving ? 0.025 : 0.012;
+  const targetVol = moving ? 0.1 : 0.04;
   engineGain.gain.value += (targetVol - engineGain.gain.value) * Math.min(1, dt * 3);
   const speed = Math.sqrt(planeVX*planeVX+planeVY*planeVY);
   if (engineOsc1) engineOsc1.frequency.value = 70 + speed * 0.08;
