@@ -1,6 +1,10 @@
 :80 {
-    @config path /config.json
-    respond @config 403
+	@config path /config.json
+	respond @config 403
 
-    reverse_proxy nginx:8080
+	root * /srv/{env.ACTIVE_GAME}
+	file_server
+
+	@static path *.js *.css *.png *.jpg *.jpeg *.gif *.ico *.svg
+	header @static Cache-Control "public, max-age=3600"
 }
