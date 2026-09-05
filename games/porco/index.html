@@ -109,10 +109,10 @@ function generateIslands() {
 
 function spawnGinaIsland() {
   const ww = W * WORLD_WIDTH_MULT;
-  const w = 160;
-  const h = 40;
+  const w = 220;
+  const h = 55;
   const trees = [];
-  for (let t = 0; t < 10; t++) {
+  for (let t = 0; t < 15; t++) {
     trees.push({
       x: (Math.random() - 0.5) * w * 0.6,
       y: -Math.random() * h * 0.7,
@@ -120,10 +120,35 @@ function spawnGinaIsland() {
       shade: Math.floor(Math.random() * 4),
     });
   }
+  const flowers = [];
+  for (let f = 0; f < 20; f++) {
+    flowers.push({
+      x: -w * 0.35 + Math.random() * w * 0.25,
+      y: -Math.random() * h * 0.5,
+      color: ['#e04040','#e88098','#e8d040','#f0f0e8'][Math.floor(Math.random()*4)],
+      r: 1 + Math.random() * 1.5,
+    });
+  }
+  const bushes = [];
+  for (let b = 0; b < 6; b++) {
+    bushes.push({
+      x: -w * 0.38 + Math.random() * w * 0.3,
+      y: -Math.random() * h * 0.45,
+      r: 3 + Math.random() * 3,
+    });
+  }
+  const vines = [];
+  for (let v = 0; v < 8; v++) {
+    vines.push({
+      x: (Math.random() - 0.5) * w * 0.4,
+      y: -h * 0.3 - Math.random() * h * 0.5,
+      h: 8 + Math.random() * 15,
+    });
+  }
   islands.push({
     wx: worldOffset + W + 200 + Math.random() * 100,
     w, h, trees, rocks: [], dist: 0.2,
-    isGinaBar: true,
+    isGinaBar: true, flowers, bushes, vines,
   });
   ginaActive = true;
   ginaIslandCounter = 0;
@@ -687,7 +712,7 @@ function drawBoat(boat) {
   ctx.restore();
 }
 
-function drawGinaBar(island) {
+function drawHotelAdriano(island) {
   const sx = screenX(island.wx);
   if (sx < -island.w || sx > W + island.w) return;
   const baseY = horizonY + 1;
@@ -697,47 +722,246 @@ function drawGinaBar(island) {
   ctx.save();
   ctx.globalAlpha = alpha;
 
-  const dockX = sx + island.w * 0.35;
-  const dockY = baseY;
-  const dockLen = 30 * sc;
-  const dockH = 6 * sc;
+  const bw = island.w * 0.5;
+  const bh = island.h * 1.6;
+  const baseTop = baseY - bh * 0.3;
 
-  ctx.fillStyle = '#8B6914';
-  for (let p = 0; p < 4; p++) {
-    const px = dockX + p * dockLen * 0.3;
-    ctx.fillRect(px - 1.5 * sc, dockY - dockH * 2, 3 * sc, dockH * 3);
+  // --- Cypress trees behind hotel ---
+  const cypressPositions = [-0.3, -0.15, 0.35, 0.5];
+  for (const cp of cypressPositions) {
+    const cx = sx + bw * cp;
+    const ch = bh * (0.9 + Math.random() * 0.3);
+    ctx.fillStyle = '#2a4a2a';
+    ctx.beginPath();
+    ctx.moveTo(cx, baseTop - ch);
+    ctx.lineTo(cx - 4 * sc, baseTop);
+    ctx.lineTo(cx + 4 * sc, baseTop);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#1e3a1e';
+    ctx.beginPath();
+    ctx.moveTo(cx + 1, baseTop - ch + 3);
+    ctx.lineTo(cx - 2 * sc, baseTop);
+    ctx.lineTo(cx + 5 * sc, baseTop);
+    ctx.closePath();
+    ctx.fill();
   }
-  ctx.fillStyle = '#A0792C';
-  ctx.fillRect(dockX, dockY - dockH * 1.5, dockLen * 0.9, 3 * sc);
 
-  const bx = dockX + dockLen * 0.3;
-  const by = dockY - dockH * 2;
-  ctx.translate(bx, by);
-  ctx.scale(sc, sc);
+  // --- Stone base wall ---
+  const wallW = bw * 0.95;
+  const wallH = bh * 0.35;
+  const wallX = sx - wallW * 0.5;
+  const wallY = baseTop;
 
-  ctx.fillStyle = '#e8dcc8';
-  ctx.fillRect(-10, -14, 20, 14);
-  ctx.fillStyle = '#c4a060';
+  const wallGrad = ctx.createLinearGradient(wallX, wallY, wallX, wallY + wallH);
+  wallGrad.addColorStop(0, '#c4a06a');
+  wallGrad.addColorStop(1, '#a88850');
+  ctx.fillStyle = wallGrad;
+  ctx.fillRect(wallX, wallY, wallW, wallH);
+
+  ctx.fillStyle = '#b89858';
+  ctx.fillRect(wallX, wallY, wallW, 2 * sc);
+
+  // Water gate arch
+  const gateX = sx + bw * 0.1;
+  const gateW = 8 * sc;
+  const gateH = 12 * sc;
+  ctx.fillStyle = '#3a2a1a';
   ctx.beginPath();
-  ctx.moveTo(-12, -14);
-  ctx.lineTo(0, -20);
-  ctx.lineTo(12, -14);
+  ctx.ellipse(gateX, wallY + wallH, gateW * 0.5, gateH, 0, Math.PI, 0);
+  ctx.fill();
+
+  // Small windows in stone wall
+  ctx.fillStyle = '#3a2a1a';
+  for (let wi = 0; wi < 3; wi++) {
+    const wx = wallX + wallW * (0.15 + wi * 0.3);
+    ctx.fillRect(wx, wallY + wallH * 0.35, 4 * sc, 5 * sc);
+  }
+
+  // --- Main hotel building ---
+  const bldgW = bw * 0.6;
+  const bldgH = bh * 0.55;
+  const bldgX = sx - bldgW * 0.5;
+  const bldgY = wallY - bldgH;
+
+  const bldgGrad = ctx.createLinearGradient(bldgX, bldgY, bldgX + bldgW, bldgY);
+  bldgGrad.addColorStop(0, '#d4a854');
+  bldgGrad.addColorStop(0.5, '#deb864');
+  bldgGrad.addColorStop(1, '#c89840');
+  ctx.fillStyle = bldgGrad;
+  ctx.fillRect(bldgX, bldgY, bldgW, bldgH);
+
+  // Windows - arched, 3 rows
+  ctx.fillStyle = '#5a4030';
+  for (let row = 0; row < 3; row++) {
+    const cols = row === 0 ? 3 : 4;
+    for (let c = 0; c < cols; c++) {
+      const wx = bldgX + bldgW * (0.1 + (c + 0.5) / cols * 0.8);
+      const wy = bldgY + bldgH * (0.15 + row * 0.28);
+      const ww = 5 * sc;
+      const wh = 7 * sc;
+      ctx.fillRect(wx - ww * 0.5, wy, ww, wh);
+      ctx.beginPath();
+      ctx.ellipse(wx, wy, ww * 0.5, ww * 0.5, 0, Math.PI, 0);
+      ctx.fill();
+      // Blue shutters
+      ctx.fillStyle = '#5080a0';
+      ctx.fillRect(wx - ww * 0.5 - 2 * sc, wy, 2 * sc, wh);
+      ctx.fillRect(wx + ww * 0.5, wy, 2 * sc, wh);
+      ctx.fillStyle = '#5a4030';
+    }
+  }
+
+  // Balcony railing (2nd floor)
+  const balconyY = bldgY + bldgH * 0.42;
+  ctx.strokeStyle = '#8a7050';
+  ctx.lineWidth = 1.5 * sc;
+  ctx.beginPath();
+  ctx.moveTo(bldgX + bldgW * 0.15, balconyY);
+  ctx.lineTo(bldgX + bldgW * 0.85, balconyY);
+  ctx.stroke();
+  for (let bi = 0; bi < 8; bi++) {
+    const bx = bldgX + bldgW * (0.17 + bi * 0.09);
+    ctx.beginPath();
+    ctx.moveTo(bx, balconyY);
+    ctx.lineTo(bx, balconyY - 4 * sc);
+    ctx.stroke();
+  }
+
+  // Central arched entrance on ground floor
+  const doorX = sx;
+  const doorW = 8 * sc;
+  const doorH = 12 * sc;
+  const doorY = wallY - doorH;
+  ctx.fillStyle = '#4a3020';
+  ctx.fillRect(doorX - doorW * 0.5, doorY, doorW, doorH);
+  ctx.beginPath();
+  ctx.ellipse(doorX, doorY, doorW * 0.5, doorW * 0.5, 0, Math.PI, 0);
+  ctx.fill();
+
+  // --- Red terracotta roof ---
+  const roofH = bh * 0.18;
+  ctx.fillStyle = '#b83c20';
+  ctx.beginPath();
+  ctx.moveTo(bldgX - 3 * sc, bldgY);
+  ctx.lineTo(sx, bldgY - roofH);
+  ctx.lineTo(bldgX + bldgW + 3 * sc, bldgY);
   ctx.closePath();
   ctx.fill();
 
-  ctx.fillStyle = '#6a4a30';
-  ctx.fillRect(-3, -7, 5, 7);
+  // Roof highlight
+  ctx.fillStyle = '#d04828';
+  ctx.beginPath();
+  ctx.moveTo(bldgX, bldgY);
+  ctx.lineTo(sx, bldgY - roofH + 2 * sc);
+  ctx.lineTo(bldgX + bldgW * 0.5, bldgY);
+  ctx.closePath();
+  ctx.fill();
 
-  ctx.fillStyle = '#8ab4d0';
-  ctx.fillRect(-8, -12, 4, 4);
-  ctx.fillRect(4, -12, 4, 4);
+  // Central tower/dome
+  const towerW = 10 * sc;
+  const towerH = bh * 0.2;
+  const towerX = sx;
+  const towerY = bldgY - roofH;
+  ctx.fillStyle = '#d4a854';
+  ctx.fillRect(towerX - towerW * 0.5, towerY - towerH, towerW, towerH);
+  ctx.fillStyle = '#b83c20';
+  ctx.beginPath();
+  ctx.moveTo(towerX - towerW * 0.6, towerY - towerH);
+  ctx.lineTo(towerX, towerY - towerH - 6 * sc);
+  ctx.lineTo(towerX + towerW * 0.6, towerY - towerH);
+  ctx.closePath();
+  ctx.fill();
+  // Dome tip
+  ctx.fillStyle = '#c89840';
+  ctx.beginPath();
+  ctx.arc(towerX, towerY - towerH - 6 * sc, 2 * sc, 0, Math.PI * 2);
+  ctx.fill();
 
-  ctx.fillStyle = '#c83030';
-  ctx.fillRect(-6, -18, 12, 3);
-  ctx.fillStyle = '#fff';
-  ctx.font = 'bold 2px sans-serif';
+  // --- Vines on walls ---
+  if (island.vines) {
+    ctx.fillStyle = '#4a8a3a';
+    for (const vine of island.vines) {
+      const vx = sx + vine.x * sc;
+      const vy = baseTop + vine.y * sc;
+      ctx.beginPath();
+      ctx.ellipse(vx, vy, 3 * sc, vine.h * 0.3 * sc, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#3a7a2a';
+      ctx.fillRect(vx - 1 * sc, vy, 2 * sc, vine.h * 0.5 * sc);
+      ctx.fillStyle = '#4a8a3a';
+    }
+  }
+
+  // --- Terrace with umbrellas (right side) ---
+  const terrX = sx + bw * 0.32;
+  const terrY = wallY - 2 * sc;
+
+  // Terrace floor
+  ctx.fillStyle = '#d4b878';
+  ctx.fillRect(terrX - 15 * sc, terrY, 30 * sc, 3 * sc);
+
+  // Umbrellas
+  const umbrellaColors = ['#e86080', '#50a0d0', '#e8d040'];
+  for (let u = 0; u < 3; u++) {
+    const ux = terrX + (u - 1) * 9 * sc;
+    const uy = terrY - 2 * sc;
+    ctx.fillStyle = '#6a5040';
+    ctx.fillRect(ux - 0.5 * sc, uy, 1 * sc, 8 * sc);
+    ctx.fillStyle = umbrellaColors[u];
+    ctx.beginPath();
+    ctx.ellipse(ux, uy, 5 * sc, 3 * sc, 0, 0, Math.PI);
+    ctx.fill();
+  }
+
+  // --- Stairs to water (right) ---
+  const stairX = sx + bw * 0.45;
+  const stairW = 8 * sc;
+  const stairSteps = 5;
+  ctx.fillStyle = '#b89858';
+  for (let s = 0; s < stairSteps; s++) {
+    const sy = wallY + s * (wallH * 0.15);
+    ctx.fillRect(stairX, sy, stairW * (1 - s * 0.1), wallH * 0.13);
+  }
+
+  // --- "Hotel Adriano" text on wall ---
+  ctx.fillStyle = '#8a3020';
+  ctx.font = `bold ${Math.max(5, 7 * sc)}px serif`;
   ctx.textAlign = 'center';
-  ctx.fillText('GINA', 0, -16);
+  ctx.fillText('Hotel Adriano', sx + bw * 0.05, wallY + wallH * 0.7);
+
+  // --- Dock extending left ---
+  const dockStartX = sx - bw * 0.48;
+  const dockEndX = dockStartX - bw * 0.7;
+  const dockY = baseY - 1;
+  const dockH = 3 * sc;
+
+  // Dock posts
+  ctx.fillStyle = '#6a5030';
+  const postCount = 7;
+  for (let p = 0; p < postCount; p++) {
+    const px = dockEndX + (dockStartX - dockEndX) * (p / (postCount - 1));
+    ctx.fillRect(px - 1.5 * sc, dockY - dockH * 3, 3 * sc, dockH * 4);
+  }
+
+  // Dock planks
+  ctx.fillStyle = '#8a7050';
+  ctx.fillRect(dockEndX, dockY - dockH * 1.5, dockStartX - dockEndX, dockH);
+
+  // Seaplane silhouette at dock end
+  const planeX = dockEndX + 15 * sc;
+  const planeY = dockY - dockH * 2.5;
+  ctx.fillStyle = '#c43030';
+  ctx.fillRect(planeX - 12 * sc, planeY, 24 * sc, 3 * sc);
+  ctx.fillRect(planeX - 2 * sc, planeY - 5 * sc, 4 * sc, 5 * sc);
+  ctx.fillStyle = '#e8d8c8';
+  ctx.beginPath();
+  ctx.moveTo(planeX - 10 * sc, planeY + 3 * sc);
+  ctx.lineTo(planeX + 10 * sc, planeY + 3 * sc);
+  ctx.lineTo(planeX + 8 * sc, planeY + 5 * sc);
+  ctx.lineTo(planeX - 8 * sc, planeY + 5 * sc);
+  ctx.closePath();
+  ctx.fill();
 
   ctx.restore();
 }
@@ -860,7 +1084,7 @@ function render() {
   drawHaze();
   drawSea();
   for (const i of islands) drawIsland(i);
-  for (const i of islands) if (i.isGinaBar) drawGinaBar(i);
+  for (const i of islands) if (i.isGinaBar) drawHotelAdriano(i);
   for (const b of boats) drawBoat(b);
   for (const c of nearClouds) { const cloudBot = c.y + 30 * c.scale; if (cloudBot < planeY - 15) drawCloud(c, false); }
   drawPlane();
