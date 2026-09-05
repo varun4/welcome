@@ -2,6 +2,9 @@ vellavarun.duckdns.org, porcoflies.duckdns.org {
 	@config path /config.json
 	respond @config 403
 
+	@favicon path /favicon.ico
+	respond @favicon 204
+
 	root * /srv/{env.ACTIVE_GAME}
 	file_server
 
