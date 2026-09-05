@@ -41,6 +41,10 @@ const PLANE_FRICTION = 0.92;
 const DAY_CYCLE = 160;
 const WORLD_WIDTH_MULT = 5;
 
+// Storybook serif stack (zero-download Ghibli warmth: Palatino on
+// macOS/iOS/Windows, Georgia/DejaVu Serif fallback on Linux)
+const FONT_STORY = '"Palatino Linotype", Palatino, "Book Antiqua", Georgia, "DejaVu Serif", serif';
+
 const keys = {};
 const touch = { active: false, x: 0, y: 0, startX: 0, startY: 0, id: null };
 
@@ -1069,9 +1073,9 @@ function drawHotelAdriano(island) {
   ctx.rotate(-0.04);
   ctx.fillStyle = '#a03523';
   ctx.textAlign = 'center';
-  ctx.font = `italic ${5.5 * sc}px serif`;
+  ctx.font = `italic ${5.5 * sc}px ${FONT_STORY}`;
   ctx.fillText('Hotel', 0, -4.5 * sc);
-  ctx.font = `italic bold ${7 * sc}px serif`;
+  ctx.font = `italic bold ${7 * sc}px ${FONT_STORY}`;
   ctx.fillText('Adriano', 0, 3.5 * sc);
   ctx.strokeStyle = '#a03523';
   ctx.lineWidth = Math.max(0.8, 1 * sc);
@@ -1146,6 +1150,31 @@ function drawJoystick() {
   ctx.arc(kx, ky, knobR, 0, Math.PI * 2);
   ctx.fillStyle = '#fff';
   ctx.fill();
+  ctx.restore();
+}
+
+function drawCredits() {
+  if (creditsT < 0) return;
+  const total = CREDITS_IN + CREDITS_HOLD + CREDITS_OUT;
+  if (creditsT > total) return;
+  let a;
+  if (creditsT < CREDITS_IN) a = creditsT / CREDITS_IN;
+  else if (creditsT < CREDITS_IN + CREDITS_HOLD) a = 1;
+  else a = 1 - (creditsT - CREDITS_IN - CREDITS_HOLD) / CREDITS_OUT;
+  const unit = Math.min(W, H);
+  ctx.save();
+  ctx.globalAlpha = Math.max(0, Math.min(1, a));
+  ctx.textAlign = 'center';
+  const baseY = H - H * 0.06;
+  ctx.font = `italic bold ${Math.max(18, unit * 0.055)}px ${FONT_STORY}`;
+  ctx.lineWidth = Math.max(2, unit * 0.004);
+  ctx.strokeStyle = 'rgba(10,15,30,0.7)';
+  ctx.strokeText("A pig's gotta fly.", W / 2, baseY - unit * 0.045);
+  ctx.fillStyle = '#f5f0e0';
+  ctx.fillText("A pig's gotta fly.", W / 2, baseY - unit * 0.045);
+  ctx.font = `${Math.max(11, unit * 0.022)}px sans-serif`;
+  ctx.fillStyle = 'rgba(245,240,224,0.85)';
+  ctx.fillText('made with ❤️ by varun', W / 2, baseY);
   ctx.restore();
 }
 
@@ -1252,11 +1281,20 @@ function render() {
   drawPlane();
   for (const c of nearClouds) { const cloudBot = c.y + 30 * c.scale; if (cloudBot >= planeY - 15) drawCloud(c, false); }
   drawJoystick();
+  drawCredits();
 }
 
 let audioStarted = false;
 let audioCtx, engineGain, engineOsc1, engineOsc2;
 let muted = false;
+
+// Credits overlay: auto-shows once after CREDITS_DELAY, fades after a few
+// seconds; C re-triggers the fade cycle anytime
+let elapsed = 0;
+let creditsT = -1;
+let creditsAutoShown = false;
+const CREDITS_DELAY = 30;
+const CREDITS_IN = 0.8, CREDITS_HOLD = 3.2, CREDITS_OUT = 1.2;
 
 const muteBtn = document.getElementById('mute');
 muteBtn.addEventListener('click', () => {
@@ -1303,6 +1341,12 @@ function loop(ts) {
   if (!lastTime) lastTime = ts;
   const dt = Math.min((ts - lastTime) / 1000, 0.05);
   lastTime = ts;
+  elapsed += dt;
+  if (!creditsAutoShown && elapsed >= CREDITS_DELAY) { creditsAutoShown = true; creditsT = 0; }
+  if (creditsT >= 0) {
+    creditsT += dt;
+    if (creditsT > CREDITS_IN + CREDITS_HOLD + CREDITS_OUT) creditsT = -1;
+  }
   handleInput(dt);
   updateWorld(dt);
   updateAudio(dt);
@@ -1326,6 +1370,7 @@ window.addEventListener('keydown', e => {
     spawnGinaIsland();
     return;
   }
+  if (e.code === 'KeyC') { creditsT = 0; return; }
   keys[e.code] = true;
   if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) e.preventDefault();
   startAudio();
