@@ -1,0 +1,6 @@
+:80 {
+    @config path /config.json
+    respond @config 403
+
+    reverse_proxy nginx:8080
+}

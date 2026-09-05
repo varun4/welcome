@@ -1,0 +1,9 @@
+{
+  "active": "porco",
+  "pages": {
+    "porco": {
+      "name": "Porco Rosso",
+      "description": "Ghibli-style flying game over the Adriatic"
+    }
+  }
+}

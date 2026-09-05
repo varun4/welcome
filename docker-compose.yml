@@ -1,0 +1,20 @@
+version: "3.8"
+
+services:
+  caddy:
+    image: caddy:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      - nginx
+    restart: unless-stopped
+
+  nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
+    expose:
+      - "8080"
+    restart: unless-stopped
