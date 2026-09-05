@@ -722,30 +722,9 @@ function drawHotelAdriano(island) {
   ctx.save();
   ctx.globalAlpha = alpha;
 
-  const bw = island.w * 0.5;
-  const bh = island.h * 1.6;
+  const bw = island.w * 0.4;
+  const bh = island.h * 1.1;
   const baseTop = baseY - bh * 0.3;
-
-  // --- Cypress trees behind hotel ---
-  const cypressPositions = [-0.3, -0.15, 0.35, 0.5];
-  for (const cp of cypressPositions) {
-    const cx = sx + bw * cp;
-    const ch = bh * (0.9 + Math.random() * 0.3);
-    ctx.fillStyle = '#2a4a2a';
-    ctx.beginPath();
-    ctx.moveTo(cx, baseTop - ch);
-    ctx.lineTo(cx - 4 * sc, baseTop);
-    ctx.lineTo(cx + 4 * sc, baseTop);
-    ctx.closePath();
-    ctx.fill();
-    ctx.fillStyle = '#1e3a1e';
-    ctx.beginPath();
-    ctx.moveTo(cx + 1, baseTop - ch + 3);
-    ctx.lineTo(cx - 2 * sc, baseTop);
-    ctx.lineTo(cx + 5 * sc, baseTop);
-    ctx.closePath();
-    ctx.fill();
-  }
 
   // --- Stone base wall ---
   const wallW = bw * 0.95;
