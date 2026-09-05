@@ -936,6 +936,10 @@ window.addEventListener('keydown', e => {
     else document.documentElement.requestFullscreen().catch(() => {});
     return;
   }
+  if (e.code === 'KeyG' && !ginaActive) {
+    spawnGinaIsland();
+    return;
+  }
   keys[e.code] = true;
   if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) e.preventDefault();
   startAudio();
