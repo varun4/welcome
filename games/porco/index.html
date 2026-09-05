@@ -8,10 +8,12 @@
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:100%;height:100%;overflow:hidden;background:#000;touch-action:none;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 canvas{display:block;width:100%;height:100%}
+#mute{position:fixed;top:12px;right:12px;z-index:10;width:40px;height:40px;border:none;border-radius:50%;background:rgba(255,255,255,0.25);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);font-size:20px;line-height:40px;text-align:center;cursor:pointer;color:#fff;-webkit-tap-highlight-color:transparent}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
+<button id="mute" aria-label="Mute">🔊</button>
 <script>
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
@@ -822,6 +824,15 @@ function render() {
 
 let audioStarted = false;
 let audioCtx, engineGain, engineOsc1, engineOsc2;
+let muted = false;
+
+const muteBtn = document.getElementById('mute');
+muteBtn.addEventListener('click', () => {
+  muted = !muted;
+  muteBtn.textContent = muted ? '🔇' : '🔊';
+  if (engineGain) engineGain.gain.value = muted ? 0 : 0.25;
+});
+muteBtn.addEventListener('touchend', e => e.stopPropagation());
 
 function startAudio() {
   if (audioCtx && audioCtx.state === 'suspended') { audioCtx.resume(); return; }
@@ -842,6 +853,7 @@ function startAudio() {
 function updateAudio(dt) {
   if (!audioStarted || !audioCtx || !engineGain) return;
   if (audioCtx.state === 'suspended') { audioCtx.resume(); return; }
+  if (muted) { engineGain.gain.value = 0; return; }
   const moving = Math.abs(planeVX) > 5 || Math.abs(planeVY) > 5;
   const targetVol = moving ? 0.25 : 0.1;
   engineGain.gain.value += (targetVol - engineGain.gain.value) * Math.min(1, dt * 3);
